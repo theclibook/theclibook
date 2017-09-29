@@ -9,6 +9,6 @@
   },
   "author": "Robert Kowalski <rok@kowalski.gd>",
   "dependencies": {
-    "pouchdb-server": "^1.0.0"
+    "pouchdb-server": "^2.3.7"
   }
 }

@@ -14,12 +14,12 @@
   ],
   "author": "Robert Kowalski <rok@kowalski.gd>",
   "dependencies": {
-    "nopt": "^3.0.6",
-    "request": "^2.67.0"
+    "nopt": "^4.0.1",
+    "request": "^2.83.0"
   },
   "devDependencies": {
-    "hock": "^1.2.0",
-    "mocha": "^2.3.4",
-    "nock": "^3.4.0"
+    "hock": "^1.3.2",
+    "mocha": "^3.5.3",
+    "nock": "^9.0.22"
   }
 }
