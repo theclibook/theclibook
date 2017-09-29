@@ -6,89 +6,84 @@ const Writable = require('stream').Writable;
 const request = require('request');
 const lounger = require('./lounger.js');
 
-function TransformToBulkDocs (options) {
-  if (!options) {
-    options = {};
-  }
-
-  if (!options.bufferedDocCount) {
-    options.bufferedDocCount = 200;
-  }
-
-  Transform.call(this, {
-    objectMode: true
-  });
-
-  this.buffer = [];
-  this.bufferedDocCount = options.bufferedDocCount;
-}
-
-util.inherits(TransformToBulkDocs, Transform);
-
-TransformToBulkDocs.prototype._transform = transform;
-function transform (chunk, encoding, done) {
-
-  this.buffer.push(chunk);
-  if (this.buffer.length >= this.bufferedDocCount) {
-    this.push({docs: this.buffer});
-    this.buffer = [];
-  }
-
-  done();
-}
-
-TransformToBulkDocs.prototype._flush = flush;
-function flush (done) {
-
-  this.buffer.length && this.push({docs: this.buffer});
-  done();
-}
-
-
-function CouchBulkImporter (options) {
-  if (!options) {
-    options = {};
-  }
-
-  if (!options.url) {
-    const msg = [
-      'options.url must be set',
-      'example:',
-      "new CouchBulkImporter({url: 'http://localhost:5984/baseball'})"
-    ].join('\n')
-    throw new Error(msg);
-  }
-
-  Writable.call(this, {
-    objectMode: true
-  })
-
-  // sanitise url, remove trailing slash
-  this.url = options.url.replace(/\/$/, '');
-}
-util.inherits(CouchBulkImporter, Writable);
-
-
-CouchBulkImporter.prototype._write = write;
-function write (chunk, enc, done) {
-  request({
-    json: true,
-    uri: this.url + '/_bulk_docs',
-    method: 'POST',
-    body: chunk
-  }, function (err, res, body) {
-    if (err) {
-      return done(err);
+class TransformToBulkDocs extends Transform {
+  constructor (options) {
+    if (!options) {
+      options = {};
     }
 
-    if (!/^2../.test(res.statusCode)) {
-      const msg = 'CouchDB server answered: \n Status: ' +
-        res.statusCode + '\n Body: ' + JSON.stringify(body);
-      return done(new Error(msg));
+    if (!options.bufferedDocCount) {
+      options.bufferedDocCount = 200;
+    }
+
+    options.objectMode = true;
+
+    super(options);
+
+    this.buffer = [];
+    this.bufferedDocCount = options.bufferedDocCount;
+  }
+
+  _transform (chunk, encoding, done) {
+    this.buffer.push(chunk);
+    if (this.buffer.length >= this.bufferedDocCount) {
+      this.push({docs: this.buffer});
+      this.buffer = [];
     }
 
     done();
-  });
+  }
+
+  _flush (done) {
+
+    this.buffer.length && this.push({docs: this.buffer});
+    done();
+  }
+}
+
+class CouchBulkImporter extends Writable {
+  constructor (options) {
+    if (!options) {
+      options = {};
+    }
+
+    if (!options.url) {
+      const msg = [
+        'options.url must be set',
+        'example:',
+        "new CouchBulkImporter({url: 'http://localhost:5984/baseball'})"
+      ].join('\n')
+      throw new Error(msg);
+    }
+
+    options.objectMode = true;
+
+    super(options);
+
+    // sanitise url, remove trailing slash
+    this.url = options.url.replace(/\/$/, '');
+  }
+
+  _write (chunk, enc, done) {
+    request({
+      json: true,
+      uri: this.url + '/_bulk_docs',
+      method: 'POST',
+      body: chunk
+    }, function (err, res, body) {
+      if (err) {
+        return done(err);
+      }
+
+      if (!/^2../.test(res.statusCode)) {
+        const msg = 'CouchDB server answered: \n Status: ' +
+          res.statusCode + '\n Body: ' + JSON.stringify(body);
+        return done(new Error(msg));
+      }
+
+      done();
+    });
+  }
 }
 
 function createTargetDatabase (url) {

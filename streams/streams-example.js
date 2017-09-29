@@ -3,23 +3,20 @@ const fs = require('fs');
 const Transform = require('stream').Transform;
 const util = require('util');
 
-function MyTransformStream () {
+class MyTransformStream extends Transform {
+  constructor (options = { objectMode: true }) {
+    options.objectMode = true;
 
-  Transform.call(this, {
-    objectMode: true
-  });
-}
+    super(options);
+  }
 
-util.inherits(MyTransformStream, Transform);
+  _transform (chunk, encoding, done) {
+    console.log('chunk: ', chunk);
 
-MyTransformStream.prototype._transform = transform;
-function transform (chunk, encoding, done) {
+    this.push(chunk);
 
-  console.log('chunk: ', chunk);
-
-  this.push(chunk);
-
-  done();
+    done();
+  }
 }
 
 const opts = {comment: '#', delimiter: ';', columns: true};
